@@ -1,0 +1,4 @@
+# requirements.txt
+scikit-learn>=1.0.0
+numpy>=1.21.0
+requests
