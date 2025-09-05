@@ -77,20 +77,28 @@ class SlackConversationProcessor:
         
     def load_and_process_conversations(self):
         """Load daily files and extract meaningful conversations"""
-        json_files = [f for f in os.listdir(self.export_directory) if f.endswith('.json')]
+        json_files = []
+        
+        # Recursively find all JSON files in the directory tree
+        for root, dirs, files in os.walk(self.export_directory):
+            for file in files:
+                if file.endswith('.json'):
+                    # Store the full path relative to export_directory for processing
+                    relative_path = os.path.relpath(os.path.join(root, file), self.export_directory)
+                    json_files.append(relative_path)
         
         if not json_files:
-            print(f"❌ No JSON files found in {self.export_directory}")
+            print(f"❌ No JSON files found in {self.export_directory} (searched recursively)")
             return []
         
-        print(f"📂 Processing {len(json_files)} daily export files...")
+        print(f"📂 Processing {len(json_files)} daily export files (found recursively)...")
         
         all_messages = []
         user_profiles = {}
         
         # Load all messages
-        for filename in sorted(json_files):
-            filepath = os.path.join(self.export_directory, filename)
+        for relative_filename in sorted(json_files):
+            filepath = os.path.join(self.export_directory, relative_filename)
             
             try:
                 with open(filepath, 'r', encoding='utf-8') as f:
@@ -104,12 +112,12 @@ class SlackConversationProcessor:
                         if user_id and user_profile:
                             user_profiles[user_id] = user_profile
                         
-                        msg['_source_file'] = filename
+                        msg['_source_file'] = relative_filename
                 
                 all_messages.extend(messages)
                 
             except Exception as e:
-                print(f"⚠️  Error processing {filename}: {e}")
+                print(f"⚠️  Error processing {relative_filename}: {e}")
                 continue
         
         self.users = user_profiles
